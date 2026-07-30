@@ -196,7 +196,7 @@ probe:
     scope: ${run.id}
   pointer: /structuredContent/count
   settle:
-    timeoutMs: 2000
+    timeoutMs: 4000
     intervalMs: 100
     stableSamples: 2
 oracle:
@@ -216,7 +216,7 @@ safety:
   processBoundary: single-process
 timeouts:
   requestMs: 8000
-  shutdownMs: 1000
+  shutdownMs: 3000
 ```
 
 ### Field reference

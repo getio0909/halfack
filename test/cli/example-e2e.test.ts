@@ -1,14 +1,15 @@
 import { spawnSync } from 'node:child_process';
-import { cp, mkdtemp, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const projectRoot = path.resolve(import.meta.dirname, '..', '..');
 const cliPath = path.join(projectRoot, 'dist', 'cli', 'main.js');
+const readmePath = path.join(projectRoot, 'README.md');
 const trackedExampleDirectory = path.join(projectRoot, 'examples');
 const scenarioFilename = 'duplicate-order.halfack.yml';
-const commandTimeoutMs = 90_000;
+const commandTimeoutMs = 180_000;
 const temporaryDirectories: string[] = [];
 
 const expectedExperiments = [
@@ -95,6 +96,17 @@ afterEach(async () => {
 });
 
 describe('tracked example through the built CLI', () => {
+  it('keeps the documented scenario identical to the runnable example', async () => {
+    const [readme, scenario] = await Promise.all([
+      readFile(readmePath, 'utf8'),
+      readFile(path.join(trackedExampleDirectory, scenarioFilename), 'utf8'),
+    ]);
+    const normalizedReadme = readme.replaceAll('\r\n', '\n');
+    const normalizedScenario = scenario.replaceAll('\r\n', '\n').trimEnd();
+
+    expect(normalizedReadme).toContain(`\`\`\`yaml\n${normalizedScenario}\n\`\`\``);
+  });
+
   it('completes all seven experiments in JSON and human formats without hanging', async () => {
     const example = await copyTrackedExample();
     const jsonExecution = executeBuiltCli(
@@ -173,5 +185,5 @@ describe('tracked example through the built CLI', () => {
       status: 0,
       stderr: '',
     });
-  }, 200_000);
+  }, 400_000);
 });

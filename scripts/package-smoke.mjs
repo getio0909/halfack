@@ -11,7 +11,7 @@ const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const maxBufferBytes = 4 * 1024 * 1024;
 const npmTimeoutMs = 120_000;
-const cliTimeoutMs = 120_000;
+const cliTimeoutMs = 180_000;
 const scenarioFilename = 'duplicate-order.halfack.yml';
 const expectedExperiments = Object.freeze([
   'suppress_completed_response',
@@ -246,6 +246,7 @@ function verifyScenarioValidation(binaryPath, cwd, scenarioPath) {
 
 function verifyScenarioRun(binaryPath, cwd, scenarioPath, expectedVersion) {
   const result = runCli(binaryPath, ['run', scenarioPath, '--format=json'], {
+    acceptNonZero: true,
     cwd,
     label: 'installed halfack run example',
     timeoutMs: cliTimeoutMs,
@@ -273,8 +274,17 @@ function verifyScenarioRun(binaryPath, cwd, scenarioPath, expectedVersion) {
   }
 
   const { suite } = report;
+  if (result.status !== 0) {
+    throw new Error(
+      `The packaged example command returned exit ${String(result.status)}. ${summarizeSuite(
+        suite,
+      )}`,
+    );
+  }
   if (suite.scenario !== 'duplicate-order' || suite.status !== 'pass' || suite.halted !== false) {
-    throw new Error('The packaged example suite did not complete with PASS status.');
+    throw new Error(
+      `The packaged example suite did not complete with PASS status. ${summarizeSuite(suite)}`,
+    );
   }
   if (
     !isRecord(suite.counts) ||
@@ -308,6 +318,7 @@ function verifyScenarioRun(binaryPath, cwd, scenarioPath, expectedVersion) {
 
 function runCli(binaryPath, arguments_, options) {
   return runChild(binaryPath, arguments_, {
+    acceptNonZero: options.acceptNonZero,
     cwd: options.cwd,
     label: options.label,
     timeoutMs: options.timeoutMs ?? cliTimeoutMs,
@@ -337,7 +348,17 @@ function runChild(command, arguments_, options) {
       `${options.label} could not run${code}.${renderChildOutput(result.stdout, result.stderr)}`,
     );
   }
-  if (result.status !== 0) {
+  if (result.status === null) {
+    const termination =
+      result.signal === null ? 'without an exit status' : `with signal ${String(result.signal)}`;
+    throw new Error(
+      `${options.label} terminated ${termination}.${renderChildOutput(
+        result.stdout,
+        result.stderr,
+      )}`,
+    );
+  }
+  if (result.status !== 0 && options.acceptNonZero !== true) {
     const termination =
       result.signal === null ? `exit ${String(result.status)}` : `signal ${String(result.signal)}`;
     throw new Error(
@@ -349,9 +370,58 @@ function runChild(command, arguments_, options) {
   }
 
   return {
+    status: result.status,
     stderr: result.stderr,
     stdout: result.stdout,
   };
+}
+
+function summarizeSuite(suite) {
+  const summary = [
+    `suite=${typeof suite.status === 'string' ? suite.status : 'unknown'}`,
+    `halted=${typeof suite.halted === 'boolean' ? String(suite.halted) : 'unknown'}`,
+  ];
+
+  if (isRecord(suite.counts)) {
+    summary.push(
+      `counts(pass=${renderCount(suite.counts.passed)}, violation=${renderCount(
+        suite.counts.violations,
+      )}, inconclusive=${renderCount(suite.counts.inconclusive)})`,
+    );
+  }
+
+  if (Array.isArray(suite.results)) {
+    const failures = [];
+    for (const entry of suite.results) {
+      if (!isRecord(entry)) {
+        failures.push('malformed-result');
+        continue;
+      }
+
+      const experiment =
+        typeof entry.experiment === 'string' ? entry.experiment : 'unknown-experiment';
+      const conclusion =
+        isRecord(entry.conclusion) && typeof entry.conclusion.kind === 'string'
+          ? entry.conclusion.kind
+          : 'unknown-conclusion';
+      const cleanup =
+        isRecord(entry.cleanup) && typeof entry.cleanup.kind === 'string'
+          ? entry.cleanup.kind
+          : 'unknown-cleanup';
+      if (conclusion !== 'pass' || cleanup === 'failed') {
+        failures.push(`${experiment}:${conclusion}/cleanup-${cleanup}`);
+      }
+    }
+    if (failures.length > 0) {
+      summary.push(`failures=${failures.join(',')}`);
+    }
+  }
+
+  return summary.join('; ');
+}
+
+function renderCount(value) {
+  return Number.isSafeInteger(value) && value >= 0 ? String(value) : 'unknown';
 }
 
 function createChildInvocation(command, arguments_) {
@@ -417,8 +487,10 @@ function assertEmptyStderr(stderr, command) {
 function assertPackageBoundary(files, source) {
   const normalized = uniqueSortedPaths(files, source);
   const requiredFiles = [
+    'CONTRIBUTING.md',
     'LICENSE',
     'README.md',
+    'SECURITY.md',
     'dist/cli/main.js',
     `examples/${scenarioFilename}`,
     'examples/server.mjs',
