@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -38,6 +38,7 @@ describe('loadScenario', () => {
     delete probe['settle'];
     const { directory, filePath } = await createScenarioFile(scenarioYaml(scenario));
     await mkdir(path.join(directory, 'sandbox'));
+    const expectedCwd = await realpath(path.join(directory, 'sandbox'));
 
     const loaded = await loadScenario(filePath);
 
@@ -47,7 +48,7 @@ describe('loadScenario', () => {
         name: 'duplicate-order',
         target: {
           args: [],
-          cwd: path.resolve(directory, 'sandbox'),
+          cwd: expectedCwd,
           envAllowlist: [],
         },
         probe: {
