@@ -197,7 +197,7 @@ probe:
   pointer: /structuredContent/count
   settle:
     timeoutMs: 4000
-    intervalMs: 100
+    intervalMs: 250
     stableSamples: 2
 oracle:
   baseline: 0
@@ -215,7 +215,7 @@ safety:
   disposable: true
   processBoundary: single-process
 timeouts:
-  requestMs: 8000
+  requestMs: 15000
   shutdownMs: 3000
 ```
 

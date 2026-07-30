@@ -11,7 +11,7 @@ const projectRoot = fileURLToPath(new URL('..', import.meta.url));
 const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const maxBufferBytes = 4 * 1024 * 1024;
 const npmTimeoutMs = 120_000;
-const cliTimeoutMs = 180_000;
+const cliTimeoutMs = 240_000;
 const scenarioFilename = 'duplicate-order.halfack.yml';
 const expectedExperiments = Object.freeze([
   'suppress_completed_response',

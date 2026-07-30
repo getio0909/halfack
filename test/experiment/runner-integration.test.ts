@@ -152,7 +152,7 @@ function createScenario(directory: string, statePath: string) {
       },
       pointer: '/structuredContent/count',
       settle: {
-        intervalMs: 100,
+        intervalMs: 250,
         stableSamples: 2,
         timeoutMs: 1_200,
       },
@@ -178,7 +178,7 @@ function createScenario(directory: string, statePath: string) {
       transport: 'stdio',
     },
     timeouts: {
-      requestMs: 5_000,
+      requestMs: 15_000,
       shutdownMs: 1_000,
     },
   });

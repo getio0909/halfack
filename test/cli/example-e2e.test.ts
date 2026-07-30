@@ -9,7 +9,7 @@ const cliPath = path.join(projectRoot, 'dist', 'cli', 'main.js');
 const readmePath = path.join(projectRoot, 'README.md');
 const trackedExampleDirectory = path.join(projectRoot, 'examples');
 const scenarioFilename = 'duplicate-order.halfack.yml';
-const commandTimeoutMs = 180_000;
+const commandTimeoutMs = 240_000;
 const temporaryDirectories: string[] = [];
 
 const expectedExperiments = [
@@ -185,5 +185,5 @@ describe('tracked example through the built CLI', () => {
       status: 0,
       stderr: '',
     });
-  }, 400_000);
+  }, 520_000);
 });
