@@ -1,0 +1,71 @@
+{
+  "name": "halfack",
+  "version": "0.1.0",
+  "description": "Fault-injection contract testing for state-changing MCP tools.",
+  "author": "HalfAck contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getio0909/halfack.git"
+  },
+  "homepage": "https://github.com/getio0909/halfack#readme",
+  "bugs": {
+    "url": "https://github.com/getio0909/halfack/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "fault-injection",
+    "idempotency",
+    "cli",
+    "testing"
+  ],
+  "type": "module",
+  "bin": {
+    "halfack": "./dist/cli/main.js"
+  },
+  "files": [
+    "dist",
+    "examples",
+    "CONTRIBUTING.md",
+    "README.md",
+    "SECURITY.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "packageManager": "pnpm@11.5.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.build.json",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",
+    "check:version": "node scripts/check-version.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "halfack": "tsx src/cli/main.ts",
+    "lint": "eslint . --max-warnings 0",
+    "package:smoke": "pnpm build && node scripts/package-smoke.mjs",
+    "prepack": "pnpm check:version && pnpm build",
+    "test": "pnpm build && vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/core": "2.0.0",
+    "yaml": "2.9.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@types/node": "22.20.1",
+    "eslint": "10.8.0",
+    "prettier": "3.9.6",
+    "tsx": "4.23.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.65.0",
+    "vitest": "4.1.10"
+  }
+}

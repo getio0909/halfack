@@ -1,0 +1,8 @@
+node_modules/
+dist/
+coverage/
+.halfack/
+*.tgz
+*.log
+.DS_Store
+Thumbs.db

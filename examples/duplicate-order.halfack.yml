@@ -1,0 +1,51 @@
+schema: halfack/v1
+name: duplicate-order
+description: Detect duplicate order creation after an acknowledged response is lost.
+target:
+  transport: stdio
+  protocol: 2026-07-28
+  command: node
+  args:
+    - ./server.mjs
+    - --state-dir
+    - ../.halfack/example-state
+  cwd: .
+  envAllowlist:
+    - PATH
+    - SystemRoot
+persistence: external
+exercise:
+  tool: orders.create
+  arguments:
+    clientToken: ${run.id}
+reset:
+  tool: test.reset
+  arguments:
+    scope: ${run.id}
+probe:
+  tool: orders.count
+  arguments:
+    scope: ${run.id}
+  pointer: /structuredContent/count
+  settle:
+    timeoutMs: 2000
+    intervalMs: 100
+    stableSamples: 2
+oracle:
+  baseline: 0
+  once: 1
+  cancelledEffect: 0
+experiments:
+  - suppress_completed_response
+  - retry_new_id
+  - rpc_id_reuse
+  - restart_after_suppressed_response
+  - parallel_new_ids
+  - cancel_on_progress
+  - disconnect_after_request_write_accepted
+safety:
+  disposable: true
+  processBoundary: single-process
+timeouts:
+  requestMs: 8000
+  shutdownMs: 1000
