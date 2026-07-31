@@ -258,6 +258,52 @@ describe('settleProbe', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
+  it('retries a full-window boundary that fires before the monotonic deadline is observable', async () => {
+    vi.useFakeTimers();
+    let clock = 0;
+    let readCalls = 0;
+    const runtime: MonotonicRuntime = {
+      now: () => clock,
+      sleep: () => Promise.reject(new Error('sleep must not be reached')),
+    };
+    const reader: ProbeReader = {
+      read: ({ signal }) => {
+        readCalls += 1;
+        if (readCalls === 3) {
+          return Promise.resolve(1);
+        }
+        signal.addEventListener(
+          'abort',
+          () => {
+            clock = readCalls === 1 ? 99 : 100;
+          },
+          { once: true },
+        );
+        return new Promise<number>(() => undefined);
+      },
+    };
+    const pending = settleProbe(
+      reader,
+      {
+        ...DEFAULT_OPTIONS,
+        observeUntilDeadline: true,
+        requestTimeoutMs: 1_000,
+        stableSamples: 1,
+      },
+      runtime,
+    );
+
+    await vi.advanceTimersByTimeAsync(100);
+    await vi.advanceTimersByTimeAsync(1);
+
+    await expect(pending).resolves.toMatchObject({
+      kind: 'stable',
+      value: 1,
+    });
+    expect(readCalls).toBe(3);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it('does not let an earlier slow probe justify a later hung observation', async () => {
     vi.useFakeTimers();
     let readCalls = 0;

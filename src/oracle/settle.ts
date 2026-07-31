@@ -166,7 +166,7 @@ export async function settleProbe(
         throw new ProbeAbortedError();
       }
       if (error instanceof DeadlineReachedError) {
-        if (observesFullWindow && !isFinalConfirmation && now() >= deadline) {
+        if (observesFullWindow && !isFinalConfirmation) {
           continue;
         }
         throw settleTimeout(evidence, now() - startedAt);
